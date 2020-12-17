@@ -1,0 +1,184 @@
+%YAML 1.2
+---
+# See http://www.sublimetext.com/docs/3/syntax.html
+file_extensions:
+  - mac
+  - inc
+scope: source.mq2
+
+variables:
+  alphanum: "[a-zA-Z0-9]"
+  reference_type: "altability|array|buff|character|ground|item|plugin|skill|spawn|spell|string|switch|time|timer|type|window|zone"
+  immediate_type: "argb|bool|body|byte|class|corpse|deity|float|heading|int|invslot|ticks|race|raidmember"
+  independent_type: "currentzone|macro|macroquest|math|merchant|raid"
+  scope: "local|outer|global"
+
+contexts:
+  main:
+    - include: comment
+    - match: '^\b(?i:Sub)\b'
+      scope: keyword.declaration.function.mq2
+      push: sub_name
+    - match: '\#'
+      push: pound
+
+  pound:
+    - meta_scope: meta.preprocessor.mq2
+    - match: $
+      pop: true
+
+  comment:
+    - match: \|\*\*
+      push: blockcomment
+    - match: \|.*
+      scope: comment.line.mq2
+
+  blockcomment:
+    - meta_scope: comment.block.mq2
+    - match: \*\*\|
+      pop: true
+
+  sub_name:
+    - match: '\b{{alphanum}}+\b'
+      scope: entity.name.function.mq2
+      set: sub_body
+
+  # Sub body is slightly different from a block statement. It is terminated by /return and not }
+  sub_body:
+    - include: variable
+    - include: comment
+    - include: flow
+    - match: \/\b(?i:Return)\b
+          scope: keyword.control.flow.return.mq2
+      pop: true
+
+  command:
+    - include: arguments
+    - match: $
+      pop: true
+    - match: \{
+      set: block
+    - match: '{{alphanum}}'
+
+  conditional:
+    - include: control
+
+  for:
+    - match: \b(?:to|downto|step)\b
+      scope: keyword.other.mq2
+    - match: \{
+      scope: punctuation.section.braces.begin.mq2
+      push: block
+    - match: \/\b(?i:next)\b
+      scope: keyword.control.flow.continue.mq2
+      pop: true
+
+  loop:
+    - include: control
+
+  arguments:
+    - include: variable
+    - meta_content_scope: text.mq2
+    - match: $
+      pop: true
+    - match: '\b(?i:{{reference_type}}|{{independent_type}}|{{immediate_type}}|{{scope}})\b'
+      scope: storage.type.mq2
+    - match: ' \/{{alphanum}}+\b '
+      scope: variable.function.mq2
+      push: command
+    - match: \"
+      scope: punctuation.definition.string.mq2
+      push: string
+
+  block:
+    - include: comment
+    - include: flow
+    - include: variable
+    - meta_content_scope: meta.braces.mq2
+    - match: \}
+      scope: punctuation.section.braces.end.mq2
+      pop: true
+    - match: ' \/{{alphanum}}+\b '
+      scope: variable.function.mq2
+      push: command
+
+  expression:
+    - include: variable
+    - meta_scope: meta.parens.mq2
+    - match: \(
+      push: expression
+    - match: \)
+      scope: punctuation.section.parens.end.mq2
+      pop: true
+    - match: (\&\&|\|\||\!)
+      scope: keyword.operator.logical.mq2
+    - match: (==|!=|<=|>=|<|>)
+      scope: keyword.operator.comparison.mq2
+    - match: (\\|\/|%|\+|-|\*)
+      scope: keyword.operator.arithmetic.mq2
+    - match: (^|\||&)
+      scope: keyword.operator.bitwise.mq2
+
+  control:
+    - match: \(
+      scope: punctuation.section.parens.begin.mq2
+      push: expression
+    - match: \{
+      scope: punctuation.section.braces.begin.mq2
+      set: block
+    - match: \/
+      scope: variable.function.mq2
+      set: command
+
+  string:
+    - include: variable
+    - meta_scope: string.quoted.double.mq2
+    - match: \"
+      scope: punctuation.definition.string.end.mq2
+      pop: true
+
+  variable:
+    - match: \$\{
+      scope: punctuation.definition.variable.begin.mq2
+      push: variable_body
+
+  variable_body:
+    - include: variable
+    - meta_content_scope: variable.mq2
+    - match: \b(?i:Bool|Int|String)\b\[
+    - match: \.
+      scope: punctuation.accessor.dot.mq2
+    - match: \}
+      scope: punctuation.definition.variable.end.mq2
+      pop: true
+    - match: \[
+      scope: punctuation.section.braces.begin.mq2
+    - match: \,
+      scope: punctuation.separator.mq2
+    - match: \]
+      scope: punctuation.section.braces.end.mq2
+
+  flow:
+    - match: \b(?i:Else /If)\b
+      scope: keyword.control.conditional.elseif.mq2
+      push: conditional
+    - match: /\b(?i:If)\b
+      scope: keyword.control.conditional.if.mq2
+      push: conditional
+    - match: \b(?i:Else)\b
+      scope: keyword.control.conditional.else.mq2
+      push: conditional
+    - match: /\b(?i:While)\b
+      scope: keyword.control.loop.while.mq2
+      push: loop
+    - match: /\b(?i:For)\b
+      scope: keyword.control.loop.for.mq2
+      push: for
+    - match: /\b(?i:Declare)\b
+      scope: keyword.declaration.impl.mq2
+      push: arguments
+    - match: /\b(?i:varset|deletevar|varcalc|vardata|echo|doevents|next|break|ini|endmacro|return|goto|continue|call)\b
+      scope: keyword.mq2
+    - match: /\b{{alphanum}}\b
+      scope: variable.function.mq2
+      push: command
