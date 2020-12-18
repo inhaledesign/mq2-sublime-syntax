@@ -1,5 +1,5 @@
 # mq2.sublime-syntax
-This is a Sublime Text 3 syntax highilight file for the Macroquest2 script language. It makes editing macros easier!
+This is a Sublime Text 3 syntax highlight file for the Macroquest2 script language. It makes editing macros easier!
 
 ## Installation
 1. [Download and install Sublime Text 3.](https://www.sublimetext.com/)
